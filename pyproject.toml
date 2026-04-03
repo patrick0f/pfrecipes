@@ -12,13 +12,20 @@ dependencies = [
     "langchain>=0.3",
     "langchain-community>=0.3",
     "langchain-openai>=0.3",
+    "langchain-text-splitters>=0.3",
+    "langchain-chroma>=0.2",
     "chromadb>=0.5",
+    "pypdf>=4.0",
+    "beautifulsoup4>=4.12",
     "python-dotenv>=1.0",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0",
+]
+ollama = [
+    "langchain-ollama>=0.3",
 ]
 
 [project.scripts]
