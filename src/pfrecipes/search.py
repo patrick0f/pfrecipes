@@ -4,12 +4,11 @@ from langchain_openai import ChatOpenAI
 from pfrecipes import config
 from pfrecipes.ingest import get_vector_store
 
-SYSTEM_PROMPT = """You are a recipe assistant. Answer questions using ONLY the recipe context provided below. \
-If the context contains relevant recipes, cite them by name. \
-If nothing in the context matches the question, say "I don't have a recipe for that." \
-Do not invent recipes or add information not present in the context.
+SYSTEM_PROMPT = """You are a helpful recipe assistant. You have access to the user's personal recipe collection below. \
+Answer their questions based on these recipes. Mention recipe names when relevant. \
+If the recipes below don't contain what the user is asking about, say so honestly.
 
-Recipe context:
+Recipes:
 {context}"""
 
 TOP_K = 5
@@ -49,7 +48,8 @@ def list_recipes() -> list[dict]:
     for meta, doc in zip(result["metadatas"], result["documents"]):
         source = meta.get("source", "unknown")
         if source not in seen:
-            preview = (doc[:100] + "...") if len(doc) > 100 else doc
+            clean = " ".join(doc.split())
+            preview = (clean[:25] + "...") if len(clean) > 25 else clean
             seen[source] = {"source": source, "preview": preview}
 
     return sorted(seen.values(), key=lambda x: x["source"])

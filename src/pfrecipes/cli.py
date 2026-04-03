@@ -81,59 +81,59 @@ def _handle_chat_input(line: str) -> bool:
         return False
 
     if line == "/help":
-        typer.echo(HELP_TEXT)
+        typer.echo(f"\n{HELP_TEXT}\n")
         return True
 
     if line == "/list":
         recipes = list_recipes()
         if not recipes:
-            typer.echo("No recipes in the knowledge base.")
+            typer.echo("\nNo recipes in the knowledge base.\n")
         else:
+            typer.echo()
             for r in recipes:
-                typer.echo(f"  {r['source']}")
-                typer.echo(f"    {r['preview']}")
-                typer.echo()
+                typer.echo(f"  {r['source']}  —  {r['preview']}")
+            typer.echo()
         return True
 
     if line == "/remove" or line.startswith("/remove "):
         source = line[len("/remove"):].strip()
         if not source:
-            typer.echo("Usage: /remove <source>")
+            typer.echo("\nUsage: /remove <source>\n")
             return True
         count = remove_recipe(source)
         if count:
-            typer.echo(f"Removed {count} chunks for '{source}'.")
+            typer.echo(f"\nRemoved {count} chunks for '{source}'.\n")
         else:
-            typer.echo(f"No chunks found for '{source}'.")
+            typer.echo(f"\nNo chunks found for '{source}'.\n")
         return True
 
     if line == "/ingest" or line.startswith("/ingest "):
         path = line[len("/ingest"):].strip()
         if not path:
-            typer.echo("Usage: /ingest <path-or-url>")
+            typer.echo("\nUsage: /ingest <path-or-url>\n")
             return True
         try:
             if path.startswith("http://") or path.startswith("https://"):
                 count = ingest_source(path)
-                typer.echo(f"Ingested URL: {count} chunks stored.")
+                typer.echo(f"\nIngested URL: {count} chunks stored.\n")
             elif Path(path).is_dir():
                 count = ingest_directory(Path(path))
-                typer.echo(f"Ingested directory: {count} chunks stored.")
+                typer.echo(f"\nIngested directory: {count} chunks stored.\n")
             elif Path(path).is_file():
                 count = ingest_source(path)
-                typer.echo(f"Ingested {Path(path).name}: {count} chunks stored.")
+                typer.echo(f"\nIngested {Path(path).name}: {count} chunks stored.\n")
             else:
-                typer.echo(f"Error: '{path}' is not a valid file, directory, or URL.")
+                typer.echo(f"\nError: '{path}' is not a valid file, directory, or URL.\n")
         except Exception as e:
-            typer.echo(f"Error: {e}")
+            typer.echo(f"\nError: {e}\n")
         return True
 
     if line.startswith("/"):
-        typer.echo(f"Unknown command: {line.split()[0]}. Type /help for commands.")
+        typer.echo(f"\nUnknown command: {line.split()[0]}. Type /help for commands.\n")
         return True
 
     answer = search_recipes(line)
-    typer.echo(answer)
+    typer.echo(f"\n{answer}\n")
     return True
 
 
@@ -142,20 +142,27 @@ def chat():
     """Interactive chat mode — ask questions or use /commands."""
     from prompt_toolkit import PromptSession
     from prompt_toolkit.completion import WordCompleter
+    from prompt_toolkit.styles import Style
 
     completer = WordCompleter(
-        ["/ingest", "/list", "/remove", "/help", "/quit", "/exit"],
+        ["/ingest", "/list", "/remove", "/help", "/quit"],
         meta_dict={
             "/ingest": "Add recipes to the knowledge base",
             "/list": "Show all ingested recipes",
             "/remove": "Remove a recipe by source",
             "/help": "Show available commands",
             "/quit": "Exit",
-            "/exit": "Exit",
         },
         sentence=True,
     )
-    session = PromptSession(completer=completer)
+    style = Style.from_dict({
+        "completion-menu": "bg:#ffffff #000000",
+        "completion-menu.completion": "bg:#ffffff #000000",
+        "completion-menu.completion.current": "bg:#dddddd #000000 bold",
+        "completion-menu.meta.completion": "bg:#ffffff #666666",
+        "completion-menu.meta.completion.current": "bg:#dddddd #444444",
+    })
+    session = PromptSession(completer=completer, style=style)
 
     typer.echo("pfrecipes — type a question or /help for commands.")
     typer.echo()

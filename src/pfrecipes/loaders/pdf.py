@@ -1,3 +1,5 @@
+import contextlib
+import io
 from pathlib import Path
 
 from langchain_community.document_loaders import PyPDFLoader
@@ -5,4 +7,5 @@ from langchain_core.documents import Document
 
 
 def load_pdf(path: Path) -> list[Document]:
-    return PyPDFLoader(str(path)).load()
+    with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+        return PyPDFLoader(str(path)).load()

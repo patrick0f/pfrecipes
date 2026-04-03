@@ -103,7 +103,7 @@ class TestListRecipes:
 
         recipes = list_recipes()
         assert recipes[0]["preview"].endswith("...")
-        assert len(recipes[0]["preview"]) == 103  # 100 chars + "..."
+        assert len(recipes[0]["preview"]) == 28  # 25 chars + "..."
 
 
 class TestRemoveRecipe:
