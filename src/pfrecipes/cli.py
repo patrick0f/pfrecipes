@@ -140,11 +140,28 @@ def _handle_chat_input(line: str) -> bool:
 @app.command()
 def chat():
     """Interactive chat mode — ask questions or use /commands."""
+    from prompt_toolkit import PromptSession
+    from prompt_toolkit.completion import WordCompleter
+
+    completer = WordCompleter(
+        ["/ingest", "/list", "/remove", "/help", "/quit", "/exit"],
+        meta_dict={
+            "/ingest": "Add recipes to the knowledge base",
+            "/list": "Show all ingested recipes",
+            "/remove": "Remove a recipe by source",
+            "/help": "Show available commands",
+            "/quit": "Exit",
+            "/exit": "Exit",
+        },
+        sentence=True,
+    )
+    session = PromptSession(completer=completer)
+
     typer.echo("pfrecipes — type a question or /help for commands.")
     typer.echo()
     while True:
         try:
-            line = input("> ")
+            line = session.prompt("> ")
         except (KeyboardInterrupt, EOFError):
             typer.echo()
             break
