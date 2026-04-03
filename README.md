@@ -102,9 +102,52 @@ All settings via environment variables (see `.env.example`):
 
 To use Ollama locally, install the `ollama` extra (`pip install -e ".[ollama]"`) and set `RECIPE_LLM_PROVIDER=ollama`.
 
+## MCP server setup
+
+To use with Claude Code or Claude Desktop, add to your MCP config:
+
+```json
+{
+  "mcpServers": {
+    "pfrecipes": {
+      "command": "pfrecipes-mcp",
+      "args": [],
+      "env": {
+        "RECIPE_CHROMA_DIR": "/absolute/path/to/pfrecipes/.chroma",
+        "RECIPE_RECIPES_DIR": "/absolute/path/to/pfrecipes/recipes"
+      }
+    }
+  }
+}
+```
+
+Use absolute paths in `env` — the MCP server is launched from a different working directory than the project root.
+
 ## Development
 
 ```bash
 pip install -e ".[dev]"
-pytest
+pytest                        # 42 unit tests, no API key needed
+pytest tests/test_quality.py  # AI quality tests, requires OPENAI_API_KEY + ingested recipes
 ```
+
+### Test structure
+
+| File | Type | Requires API key |
+|---|---|---|
+| `test_loaders.py` | Unit — loader parsing and dispatch | No |
+| `test_ingest.py` | Unit — chunking, embeddings (mocked) | No |
+| `test_search.py` | Unit — RAG pipeline (mocked) | No |
+| `test_mcp_server.py` | Unit — MCP tool registration | No |
+| `test_chat.py` | Unit — slash command routing | No |
+| `test_quality.py` | Integration — retrieval + response quality | Yes |
+
+### Quality tests
+
+`test_quality.py` has three layers:
+
+- **Retrieval** — checks that the right recipe chunks surface from ChromaDB for a given query (e.g., "garlic butter shrimp" → `garlic_butter_shrimp.md` in top 5 results)
+- **Golden set** — parametrized cases with `must_contain` / `must_not_contain` assertions on real LLM responses
+- **Sanity** — invariants like response length, no empty answers, conversation memory used in follow-ups
+
+These skip automatically if `OPENAI_API_KEY` is unset or the knowledge base is empty.

@@ -62,17 +62,18 @@ pfrecipes/
         text.py          # .txt loader
         pdf.py           # .pdf loader (suppresses pypdf noise)
         url.py           # URL loader: JSON-LD extraction → raw text fallback
-  recipes/               # default recipe storage directory
   tests/
     fixtures/            # sample_recipe.md, .txt, .pdf, sample_jsonld.html
-    test_loaders.py
-    test_ingest.py
-    test_search.py
-    test_mcp_server.py
-    test_chat.py
+    test_loaders.py      # unit: loader parsing and dispatch
+    test_ingest.py       # unit: chunking, embeddings (mocked)
+    test_search.py       # unit: RAG pipeline (mocked)
+    test_mcp_server.py   # unit: MCP tool registration
+    test_chat.py         # unit: slash command routing, history growth
+    test_quality.py      # integration: retrieval + response quality (needs API key)
   pyproject.toml
   .env.example
   PLAN.md
+  README.md
 ```
 
 ## Features
@@ -99,10 +100,18 @@ pfrecipes/
 - `/` triggers an autocomplete dropdown (prompt_toolkit)
 - Everything else → RAG answer
 - Answers word-wrapped with margins for readability
+- Directory ingestion shows file count and per-file progress (`[1/N] filename → K chunks`)
 
 ### 5. MCP Server
 - `pfrecipes-mcp` — stdio MCP server exposing `recipe_search` and `recipe_list` tools
-- Lets any MCP-compatible AI assistant (e.g., Claude Desktop) query your recipe knowledge base as a tool
+- Lets any MCP-compatible AI assistant (e.g., Claude Desktop, Claude Code) query your recipe knowledge base as a tool
+- Requires absolute paths in MCP config env vars (`RECIPE_CHROMA_DIR`, `RECIPE_RECIPES_DIR`) since the server is launched from a different working directory
+
+### 6. AI Quality Tests
+Three-layer test suite in `tests/test_quality.py` — skipped automatically if `OPENAI_API_KEY` is unset or DB is empty:
+- **Retrieval** — asserts the right recipe chunks appear in ChromaDB similarity search results for known queries
+- **Golden set** — parametrized query → `must_contain` / `must_not_contain` assertions on real LLM responses
+- **Sanity** — response length bounds, no empty answers, conversation memory used in follow-ups
 
 ## Deferred
 
