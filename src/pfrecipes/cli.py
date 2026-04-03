@@ -27,16 +27,34 @@ def ingest(path: str = typer.Argument(help="File, directory, or URL to ingest.")
 @app.command()
 def search(query: str = typer.Argument(help="Natural language query.")):
     """Search your recipes with natural language."""
-    typer.echo(f"[stub] search: {query}")
+    from pfrecipes.search import search_recipes
+
+    answer = search_recipes(query)
+    typer.echo(answer)
 
 
-@app.command()
-def list():
+@app.command(name="list")
+def list_cmd():
     """List all ingested recipes."""
-    typer.echo("[stub] list")
+    from pfrecipes.search import list_recipes
+
+    recipes = list_recipes()
+    if not recipes:
+        typer.echo("No recipes in the knowledge base.")
+        return
+    for r in recipes:
+        typer.echo(f"  {r['source']}")
+        typer.echo(f"    {r['preview']}")
+        typer.echo()
 
 
 @app.command()
-def remove(name: str = typer.Argument(help="Recipe name to remove.")):
-    """Remove a recipe from the knowledge base."""
-    typer.echo(f"[stub] remove: {name}")
+def remove(source: str = typer.Argument(help="Source path/URL to remove.")):
+    """Remove a recipe from the knowledge base by source."""
+    from pfrecipes.search import remove_recipe
+
+    count = remove_recipe(source)
+    if count:
+        typer.echo(f"Removed {count} chunks for '{source}'.")
+    else:
+        typer.echo(f"No chunks found for '{source}'.")
