@@ -1,0 +1,15 @@
+COOKINGPLAN.md
+
+# Python
+__pycache__/
+*.egg-info/
+dist/
+build/
+*.pyc
+.venv/
+
+# Environment
+.env
+
+# ChromaDB local store
+.chroma/
