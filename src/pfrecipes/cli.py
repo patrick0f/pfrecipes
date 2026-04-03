@@ -1,8 +1,24 @@
+import shutil
+import textwrap
 from pathlib import Path
 
 import typer
 
 app = typer.Typer(help="AI-powered personal recipe knowledge base.")
+
+
+def _format_answer(text: str) -> str:
+    cols = shutil.get_terminal_size().columns
+    wrap_width = max(40, cols - 8)
+    indent = "    "
+    lines = text.split("\n")
+    wrapped = []
+    for line in lines:
+        if line.strip():
+            wrapped.append(textwrap.fill(line, width=wrap_width, initial_indent=indent, subsequent_indent=indent))
+        else:
+            wrapped.append("")
+    return "\n".join(wrapped)
 
 
 @app.command()
@@ -30,7 +46,7 @@ def search(query: str = typer.Argument(help="Natural language query.")):
     from pfrecipes.search import search_recipes
 
     answer = search_recipes(query)
-    typer.echo(answer)
+    typer.echo(_format_answer(answer))
 
 
 @app.command(name="list")
@@ -133,7 +149,7 @@ def _handle_chat_input(line: str) -> bool:
         return True
 
     answer = search_recipes(line)
-    typer.echo(f"\n{answer}\n")
+    typer.echo(f"\n{_format_answer(answer)}\n")
     return True
 
 
