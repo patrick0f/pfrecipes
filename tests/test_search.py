@@ -55,6 +55,36 @@ class TestSearchRecipes:
         result = search_recipes("anything")
         assert "No recipes found" in result
 
+    def test_history_included_in_messages(self, monkeypatch):
+        from langchain_core.documents import Document
+        from langchain_core.messages import AIMessage, HumanMessage
+
+        from pfrecipes.search import search_recipes
+
+        mock_store = MagicMock()
+        mock_store.similarity_search.return_value = [
+            Document(page_content="# Garlic Shrimp", metadata={"source": "shrimp.md"})
+        ]
+
+        mock_response = MagicMock()
+        mock_response.content = "Try the Garlic Shrimp!"
+
+        mock_llm = MagicMock()
+        mock_llm.invoke.return_value = mock_response
+
+        monkeypatch.setattr("pfrecipes.search.get_vector_store", lambda: mock_store)
+        monkeypatch.setattr("pfrecipes.search.get_llm", lambda: mock_llm)
+
+        prior_human = HumanMessage(content="what do you have?")
+        prior_ai = AIMessage(content="I have shrimp recipes.")
+        history = [prior_human, prior_ai]
+
+        search_recipes("make it spicier", history)
+
+        messages_sent = mock_llm.invoke.call_args[0][0]
+        assert prior_human in messages_sent
+        assert prior_ai in messages_sent
+
 
 class TestListRecipes:
     def test_lists_unique_sources(self, monkeypatch):

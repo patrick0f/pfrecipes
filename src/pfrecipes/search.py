@@ -1,4 +1,4 @@
-from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
 
 from pfrecipes import config
@@ -18,7 +18,7 @@ def get_llm() -> ChatOpenAI:
     return ChatOpenAI(model=config.LLM_MODEL)
 
 
-def search_recipes(query: str) -> str:
+def search_recipes(query: str, history: list | None = None) -> str:
     store = get_vector_store()
     docs = store.similarity_search(query, k=TOP_K)
 
@@ -33,6 +33,7 @@ def search_recipes(query: str) -> str:
     llm = get_llm()
     messages = [
         SystemMessage(content=SYSTEM_PROMPT.format(context=context)),
+        *(history or []),
         HumanMessage(content=query),
     ]
     response = llm.invoke(messages)

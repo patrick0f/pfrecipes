@@ -65,8 +65,23 @@ class TestSearchFallthrough:
     def test_plain_text_goes_to_search(self, monkeypatch, capsys):
         monkeypatch.setattr(
             "pfrecipes.search.search_recipes",
-            lambda q: f"Answer for: {q}",
+            lambda q, history=None: f"Answer for: {q}",
         )
         assert _handle_chat_input("what shrimp recipes do I have?") is True
         output = capsys.readouterr().out
         assert "Answer for: what shrimp recipes do I have?" in output
+
+    def test_history_grows_after_search(self, monkeypatch):
+        from langchain_core.messages import AIMessage, HumanMessage
+
+        monkeypatch.setattr(
+            "pfrecipes.search.search_recipes",
+            lambda q, history=None: "some answer",
+        )
+        history: list = []
+        _handle_chat_input("first question", history)
+        assert len(history) == 2
+        assert isinstance(history[0], HumanMessage)
+        assert isinstance(history[1], AIMessage)
+        assert history[0].content == "first question"
+        assert history[1].content == "some answer"

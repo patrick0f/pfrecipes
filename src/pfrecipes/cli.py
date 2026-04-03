@@ -84,7 +84,7 @@ HELP_TEXT = """Commands:
   /quit                  Exit"""
 
 
-def _handle_chat_input(line: str) -> bool:
+def _handle_chat_input(line: str, history: list | None = None) -> bool:
     """Handle a single line of chat input. Returns False to quit."""
     from pfrecipes.ingest import ingest_directory, ingest_source
     from pfrecipes.search import list_recipes, remove_recipe, search_recipes
@@ -148,8 +148,14 @@ def _handle_chat_input(line: str) -> bool:
         typer.echo(f"\nUnknown command: {line.split()[0]}. Type /help for commands.\n")
         return True
 
-    answer = search_recipes(line)
+    from langchain_core.messages import AIMessage, HumanMessage
+
+    answer = search_recipes(line, history)
     typer.echo(f"\n{_format_answer(answer)}\n")
+    if history is not None:
+        history.append(HumanMessage(content=line))
+        history.append(AIMessage(content=answer))
+        del history[:-20]
     return True
 
 
@@ -182,11 +188,12 @@ def chat():
 
     typer.echo("pfrecipes — type a question or /help for commands.")
     typer.echo()
+    history: list = []
     while True:
         try:
             line = session.prompt("> ")
         except (KeyboardInterrupt, EOFError):
             typer.echo()
             break
-        if not _handle_chat_input(line):
+        if not _handle_chat_input(line, history):
             break
