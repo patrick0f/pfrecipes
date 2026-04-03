@@ -9,23 +9,11 @@ class TestGetLlm:
         from pfrecipes.search import get_llm
 
         monkeypatch.setattr(config, "LLM_MODEL", "gpt-4o-mini")
-        monkeypatch.setattr(config, "LLM_BASE_URL", None)
         monkeypatch.setenv("OPENAI_API_KEY", "test-key")
 
         llm = get_llm()
         assert type(llm).__name__ == "ChatOpenAI"
         assert llm.model_name == "gpt-4o-mini"
-
-    def test_custom_base_url(self, monkeypatch):
-        from pfrecipes import config
-        from pfrecipes.search import get_llm
-
-        monkeypatch.setattr(config, "LLM_MODEL", "gpt-4o-mini")
-        monkeypatch.setattr(config, "LLM_BASE_URL", "https://custom.api.com/v1")
-        monkeypatch.setenv("OPENAI_API_KEY", "test-key")
-
-        llm = get_llm()
-        assert str(llm.openai_api_base) == "https://custom.api.com/v1"
 
 
 class TestSearchRecipes:

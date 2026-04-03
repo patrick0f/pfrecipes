@@ -16,10 +16,7 @@ TOP_K = 5
 
 
 def get_llm() -> ChatOpenAI:
-    kwargs = {"model": config.LLM_MODEL}
-    if config.LLM_BASE_URL:
-        kwargs["base_url"] = config.LLM_BASE_URL
-    return ChatOpenAI(**kwargs)
+    return ChatOpenAI(model=config.LLM_MODEL)
 
 
 def search_recipes(query: str) -> str:
