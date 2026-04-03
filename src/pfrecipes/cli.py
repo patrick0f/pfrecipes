@@ -21,22 +21,48 @@ def _format_answer(text: str) -> str:
     return "\n".join(wrapped)
 
 
+def _ingest_with_progress(path: str) -> int:
+    from pfrecipes.ingest import ingest_source, list_ingestable_files
+
+    if path.startswith("http://") or path.startswith("https://"):
+        typer.echo(f"Ingesting URL...")
+        count = ingest_source(path)
+        typer.echo(f"Done: {count} chunks stored.")
+        return count
+
+    p = Path(path)
+
+    if p.is_dir():
+        files = list_ingestable_files(p)
+        if not files:
+            typer.echo("No supported files found.")
+            return 0
+        typer.echo(f"Found {len(files)} file{'s' if len(files) != 1 else ''}.")
+        total = 0
+        for i, filepath in enumerate(files, 1):
+            typer.echo(f"  [{i}/{len(files)}] {filepath.name}", nl=False)
+            chunks = ingest_source(str(filepath))
+            total += chunks
+            typer.echo(f"  →  {chunks} chunks")
+        typer.echo(f"Done: {total} chunks stored.")
+        return total
+
+    if p.is_file():
+        typer.echo(f"Ingesting {p.name}...")
+        count = ingest_source(path)
+        typer.echo(f"Done: {count} chunks stored.")
+        return count
+
+    raise ValueError(f"'{path}' is not a valid file, directory, or URL.")
+
+
 @app.command()
 def ingest(path: str = typer.Argument(help="File, directory, or URL to ingest.")):
     """Import recipes into the knowledge base."""
-    from pfrecipes.ingest import ingest_directory, ingest_source
-
-    if path.startswith("http://") or path.startswith("https://"):
-        count = ingest_source(path)
-        typer.echo(f"Ingested URL: {count} chunks stored.")
-    elif Path(path).is_dir():
-        count = ingest_directory(Path(path))
-        typer.echo(f"Ingested directory: {count} chunks stored.")
-    elif Path(path).is_file():
-        count = ingest_source(path)
-        typer.echo(f"Ingested {Path(path).name}: {count} chunks stored.")
-    else:
-        typer.echo(f"Error: '{path}' is not a valid file, directory, or URL.", err=True)
+    try:
+        _ingest_with_progress(path)
+    except ValueError as e:
+        typer.echo(f"Error: {e}", err=True)
         raise typer.Exit(code=1)
 
 
@@ -86,7 +112,6 @@ HELP_TEXT = """Commands:
 
 def _handle_chat_input(line: str, history: list | None = None) -> bool:
     """Handle a single line of chat input. Returns False to quit."""
-    from pfrecipes.ingest import ingest_directory, ingest_source
     from pfrecipes.search import list_recipes, remove_recipe, search_recipes
 
     line = line.strip()
@@ -128,20 +153,12 @@ def _handle_chat_input(line: str, history: list | None = None) -> bool:
         if not path:
             typer.echo("\nUsage: /ingest <path-or-url>\n")
             return True
+        typer.echo()
         try:
-            if path.startswith("http://") or path.startswith("https://"):
-                count = ingest_source(path)
-                typer.echo(f"\nIngested URL: {count} chunks stored.\n")
-            elif Path(path).is_dir():
-                count = ingest_directory(Path(path))
-                typer.echo(f"\nIngested directory: {count} chunks stored.\n")
-            elif Path(path).is_file():
-                count = ingest_source(path)
-                typer.echo(f"\nIngested {Path(path).name}: {count} chunks stored.\n")
-            else:
-                typer.echo(f"\nError: '{path}' is not a valid file, directory, or URL.\n")
+            _ingest_with_progress(path)
         except Exception as e:
-            typer.echo(f"\nError: {e}\n")
+            typer.echo(f"Error: {e}")
+        typer.echo()
         return True
 
     if line.startswith("/"):

@@ -13,3 +13,8 @@ build/
 
 # ChromaDB local store
 .chroma/
+
+# Local recipe files and utility scripts
+recipes/
+scripts/
+temp.txt

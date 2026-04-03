@@ -57,8 +57,8 @@ def ingest_source(source: str) -> int:
     return len(chunks)
 
 
-def ingest_directory(directory: Path) -> int:
-    total = 0
+def list_ingestable_files(directory: Path) -> list[Path]:
+    files = []
     for filepath in sorted(directory.rglob("*")):
         if not filepath.is_file():
             continue
@@ -66,5 +66,9 @@ def ingest_directory(directory: Path) -> int:
             continue
         if any(part.startswith(".") for part in filepath.parts):
             continue
-        total += ingest_source(str(filepath))
-    return total
+        files.append(filepath)
+    return files
+
+
+def ingest_directory(directory: Path) -> int:
+    return sum(ingest_source(str(f)) for f in list_ingestable_files(directory))
